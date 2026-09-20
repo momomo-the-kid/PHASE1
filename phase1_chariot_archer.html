@@ -1,0 +1,277 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>5x5 Card Battle — phase1_chariot_archer.html</title><style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}body{margin:0;background:#15171b;color:#f4f4f4;font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif}#app{max-width:720px;margin:auto;padding:10px}h1{font-size:20px;margin:4px 0 8px}.status{display:flex;gap:6px;flex-wrap:wrap;background:#22262d;border-radius:12px;padding:8px;margin-bottom:8px;font-size:13px}.badge{background:#303640;padding:5px 8px;border-radius:8px}#message{min-height:34px;background:#1d2127;border-radius:10px;padding:8px;margin-bottom:64px;font-size:13px}.boardWrap{position:relative;margin:auto;width:min(92vw,560px);aspect-ratio:1}.board{display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(5,1fr);width:100%;height:100%;border:2px solid #b99b62;background:#c8a66b;gap:1px}.cell{position:relative;background:#d8bd84;border:1px solid #9c7d4b;display:flex;align-items:center;justify-content:center}.cell.cpuSelected{outline:4px solid #ffd36b;outline-offset:-4px}.cell.hitFlash::after{content:"✴️";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:clamp(28px,9vw,54px);z-index:5;pointer-events:none;animation:hitPop .45s ease-out forwards}@keyframes hitPop{0%{opacity:0;transform:scale(.5)}25%{opacity:1;transform:scale(1.25)}100%{opacity:0;transform:scale(1.5)}}.cell.selected{outline:4px solid #55a8ff;outline-offset:-4px}.cell.summonTarget{background:#69c889;box-shadow:inset 0 0 0 2px #287849}.cell.moveTarget{background:#78b8f5}.cell.attackTarget{background:#f08080}.cell.bothTarget{background:#b391ed}.kingZone.spellTarget .king{outline:3px solid #ffad4e;outline-offset:3px}.cell.spellTarget{outline:4px solid #ffad4e;outline-offset:-4px}.kingZone.enemy.attackable .king{outline:3px solid #f08080;outline-offset:3px}.piece{position:relative;width:78%;height:78%;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:800;border:2px solid #333;box-shadow:0 2px 4px #0006}.actionDot{position:absolute;top:5%;width:clamp(8px,2.5vw,12px);height:clamp(8px,2.5vw,12px);border-radius:50%;border:1px solid #ffffffaa;box-shadow:0 1px 2px #0008;pointer-events:none;z-index:2}.actionDot.attack{right:22%;background:#ed3434}.actionDot.move{right:3%;background:#258aff}.piece.player{background:#f2d39a;color:#6c351d}.piece.cpu{background:#a9c5e5;color:#173d62}.pname{font-size:clamp(15px,4.5vw,27px)}.pstats{font-size:9px}.kingZone{position:absolute;left:0;width:100%;height:11%;z-index:4;display:flex;align-items:center;justify-content:center;pointer-events:auto}.kingZone.enemy{top:-13%}.kingZone.player{bottom:-13%}.king{pointer-events:auto;cursor:pointer}.king{background:#7f2020;border:2px solid #f2d37c;border-radius:12px;padding:6px 12px;font-weight:800;box-shadow:0 3px 8px #0008}.handTitle{font-size:13px;margin:65px 0 5px}.hand{display:flex;gap:7px;overflow-x:auto;padding:2px 1px 7px}.card{min-width:82px;background:#252a32;border:1px solid #555d69;border-radius:10px;padding:7px;text-align:center}.card.spell{background:#492a23;border-color:#cf704c}.card.enchant{background:#33294e;border-color:#ad8bea}.cell.mineCell::before{content:"✹";position:absolute;top:2px;left:3px;color:#edb85e;font-size:14px;opacity:.75;pointer-events:none}.cell.mineCell.ownMine::before{content:"✹";color:#ff6e6e;opacity:1}.battleTag{background:#643f22;color:#ffdb9a;border-radius:6px;padding:2px 6px;font-size:11px}.piece.berserk{box-shadow:0 0 0 3px #bb80ff,0 2px 7px #0008}.buffTag{position:absolute;bottom:-9px;background:#6736a1;color:white;border-radius:7px;padding:1px 4px;font-size:9px;white-space:nowrap;z-index:3}.card.selected{border:3px solid #55a8ff;padding:5px}.card .name{font-weight:800;font-size:16px}.card .cost{font-size:12px}.card .desc{font-size:9px;margin-top:3px}.controls{display:flex;gap:8px;margin-top:3px}button{border:0;border-radius:10px;padding:10px 13px;font-weight:800;background:#4d86c7;color:white}button.secondary{background:#555d69}button:disabled{opacity:.4}#log{margin-top:8px;background:#101216;border-radius:10px;padding:8px;height:120px;overflow:auto;font-size:11px;line-height:1.45}#overlay{position:fixed;inset:0;background:#000b;display:none;align-items:center;justify-content:center;z-index:20}#overlay.show{display:flex}.result{background:#252a32;border:2px solid #aaa;border-radius:16px;padding:24px;text-align:center;width:min(88vw,360px)}
+
+/* Phase 1: portrait-friendly board + persistent right information panel */
+#app{max-width:720px;padding:8px}h1{font-size:clamp(13px,3.6vw,19px);overflow-wrap:anywhere;margin-bottom:7px}
+.status{margin-bottom:6px;font-size:11px;padding:5px;gap:4px}.badge{padding:4px 6px}
+#message{margin:0 0 7px;min-height:32px;padding:7px;font-size:12px}
+.royalStatus{display:flex;align-items:center;justify-content:space-between;gap:5px;background:#272c34;border-radius:9px;padding:7px 9px;font-size:clamp(11px,3vw,14px);margin:5px 0}
+.playArea{display:grid;grid-template-columns:minmax(0, 66fr) minmax(0, 34fr);gap:7px;align-items:start;margin-top:5px}
+.boardColumn{min-width:0;display:flex;flex-direction:column;gap:5px}
+.boardWrap{position:relative;width:100%;aspect-ratio:1;margin:0}
+.boardColumn .kingZone{position:relative;top:auto;bottom:auto;left:auto;width:100%;height:auto;min-height:33px;z-index:4;pointer-events:auto}
+.boardColumn .king{font-size:clamp(10px,2.8vw,14px);padding:5px 6px;text-align:center}
+.boardColumn .kingZone.player{pointer-events:auto}
+#infoPanel{min-width:0;border:1px solid #536071;border-radius:11px;background:#222832;overflow:hidden;display:flex;flex-direction:column;max-height:min(70vh,550px)}
+.infoHeading{padding:8px 6px;font-size:clamp(11px,3vw,14px);font-weight:800;background:#343d4c;border-bottom:1px solid #596274}
+.infoContent{padding:8px 7px;font-size:clamp(10px,2.8vw,13px);line-height:1.5;overflow-y:auto;overflow-wrap:anywhere;min-height:155px;white-space:normal}
+.infoContent .infoName{font-weight:800;font-size:clamp(13px,3.5vw,17px);margin-bottom:5px;color:#ffe2a7}
+.infoContent .useCardButton{width:100%;margin-top:12px;background:#3d9a73;cursor:pointer;touch-action:manipulation}.infoContent .infoLine{margin:5px 0}.infoContent .infoEffect{margin-top:8px;padding-top:7px;border-top:1px solid #505b6a}
+.handTitle{margin:10px 0 5px}.hand{margin-bottom:2px}
+.pname{font-size:clamp(13px,3.8vw,24px)}.pstats{font-size:clamp(6px,1.8vw,9px)}
+.actionDot{width:clamp(6px,2vw,11px);height:clamp(6px,2vw,11px)}
+@media(min-width:550px){.playArea{grid-template-columns:minmax(0, 66fr) minmax(0, 34fr);gap:14px}.infoContent{font-size:14px}.boardColumn .king{font-size:15px}}
+
+/* HP | king tap target | mana: one compact row for each side */
+.boardColumn .kingZone{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:2px;align-items:center;min-height:38px;pointer-events:auto}
+.boardColumn .kingZone .king{font-size:clamp(9px,2.6vw,14px);padding:6px 4px;white-space:nowrap;cursor:pointer;touch-action:manipulation}
+.kingStat{font-size:clamp(9px,2.3vw,13px);white-space:nowrap;display:flex;align-items:center;gap:1px;justify-content:flex-start;min-width:0}
+.kingStat.manaStat{justify-content:flex-end}
+.kingStat b{font-variant-numeric:tabular-nums}
+@media(max-width:380px){.boardColumn .kingZone .king{font-size:10px;padding:5px 3px}.kingStat{font-size:9px;letter-spacing:-.5px}}
+</style></head><body><div id="app"><h1>5x5 Card Battle — phase1_chariot_archer.html</h1><div class="status"><span class="badge">ターン: <b id="turn">1</b></span><span class="badge">自分山札: <b id="deck">35</b></span><span class="badge">決戦: <b id="battleTurns">なし</b></span><span class="badge">相手手札: <b id="cpuHand">5</b>枚</span></div><div id="message" role="status">カードを選んで召喚してください。</div><div class="playArea"><div class="boardColumn"><div class="kingZone enemy"><span class="kingStat">❤️HP<b id="cHp">20</b></span><div class="king" onclick="clickKing('c')">相手の王</div><span class="kingStat manaStat">💧マナ<b id="cpuMana">2/2</b></span></div><div class="boardWrap"><div id="board" class="board"></div></div><div class="kingZone player"><span class="kingStat">❤️HP<b id="pHp">20</b></span><div class="king" onclick="clickKing('p')">あなたの王</div><span class="kingStat manaStat">💧マナ<b id="mana">1/1</b></span></div></div><aside id="infoPanel" aria-live="polite"><div class="infoHeading">選択中の情報</div><div id="infoContent" class="infoContent">カードや駒、マスをタップすると情報を表示します。</div></aside></div><div class="handTitle">手札（タップして使用）</div><div id="hand" class="hand"></div><div class="controls"><button id="endTurn">ターン終了</button><button id="newGame" class="secondary">最初から</button></div><div id="log"></div></div><div id="overlay"><div class="result"><h2 id="resultTitle"></h2><p id="resultText"></p><button onclick="location.reload()">もう一度プレイ</button></div></div>
+<script>
+const T={金:{cost:3,atk:5,hp:6,move:[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,0]]},銀:{cost:2,atk:4,hp:6,move:[[-1,-1],[-1,0],[-1,1],[1,-1],[1,1]]},歩:{cost:1,atk:3,hp:6,move:[[-1,0]]},チャリオット:{cost:5,atk:6,hp:6,move:[[-1,0],[-2,0]],attack:[[-1,-1],[-1,0],[-1,1]]},アーチャー:{cost:3,atk:4,hp:3,move:[[-1,0]],attack:[[-2,0]]}};
+const ENCHANT={バーサーク:{cost:2,kind:"enchant",duration:3},マイン:{cost:2,kind:"enchant",duration:4},決戦:{cost:4,kind:"enchant",duration:2}};
+const SPELL={ファイアーボルト:{cost:2,damage:2,kind:"spell"},ホープ:{cost:1,kind:"spell",draw:2},マナ:{cost:2,kind:"spell",gainMana:1}};
+const S={turn:1,side:"p",manaBySide:{p:1,c:2},maxManaBySide:{p:1,c:2},pHp:20,cHp:20,deck:[],hand:[],cDeck:[],cHand:[],board:Array(25).fill(null),card:null,piece:null,spellTarget:false,gameOver:false,inspect:null,cpuPreview:null,manaBonus:{p:0,c:0},mines:Array(25).fill(null),battles:[]};
+// 既存のカード処理は S.mana / S.maxMana を参照するが、実体は各プレイヤーごとに保持する。
+Object.defineProperties(S,{
+ mana:{get(){return this.manaBySide[this.side]},set(v){this.manaBySide[this.side]=v}},
+ maxMana:{get(){return this.maxManaBySide[this.side]},set(v){this.maxManaBySide[this.side]=v}}
+});
+const $=x=>document.getElementById(x),I=(r,c)=>r*5+c,IB=(r,c)=>r>=0&&r<5&&c>=0&&c<5;
+function sh(a){for(let i=a.length-1;i;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function deck(){const counts={歩:6,銀:6,金:5,チャリオット:2,アーチャー:2,ファイアーボルト:4,ホープ:4,マナ:4,バーサーク:3,マイン:2,決戦:2};const a=Object.entries(counts).flatMap(([name,n])=>Array(n).fill(name));if(a.length!==40)throw Error("デッキ枚数が40枚ではありません: "+a.length);return sh(a)}
+function log(x){$("log").innerHTML+="<div>"+x+"</div>";$("log").scrollTop=$("log").scrollHeight}
+function msg(x){$("message").textContent=x}
+function draw(side="p"){let d=side==="p"?S.deck:S.cDeck,h=side==="p"?S.hand:S.cHand;if(!d.length){if(side==="p")lose("山札切れ");else win("CPUの山札切れ");return false}h.push(d.pop());return true}
+function maxManaFor(side){return Math.min(10,S.turn+(side==="c"?1:0)+S.manaBonus[side])}
+function pattern(p,action="move"){return p.berserk>0?[[-1,0]]:(action==="attack"?(T[p.type].attack||T[p.type].move):T[p.type].move)}
+// 2マス移動は途中のマスを飛び越えられない。射程2の攻撃は途中の駒を越えて届く。
+function movePathClear(from,dr,dc,p){if(Math.max(Math.abs(dr),Math.abs(dc))<=1)return true;const r=Math.floor(from/5),c=from%5,vr=p.side==="p"?dr:-dr;const steps=Math.max(Math.abs(vr),Math.abs(dc));for(let step=1;step<steps;step++){const rr=r+vr*step/steps,cc=c+dc*step/steps;if(!IB(rr,cc)||S.board[I(rr,cc)])return false}return true}
+function power(p){return p.atk*(p.berserk>0?2:1)+2*S.battles.length}
+// 全体効果と設置効果は、先攻・後攻が両方行動した時点で1ターン経過。
+function tickBoardEffects(){for(let k=0;k<25;k++){const mine=S.mines[k];if(mine&&--mine.turns<=0){S.mines[k]=null;log(`マイン（${Math.floor(k/5)+1}行${k%5+1}列）が消滅。`)}}S.battles=S.battles.filter(x=>{if(--x.turns>0)return true;log("決戦の効果が終了。");return false})}
+function enterSquare(k,p){const mine=S.mines[k];if(!mine)return false;S.mines[k]=null;p.hp-=5;log(`${p.type}がマインを踏み、5ダメージ！`);msg(`${p.type}がマインで5ダメージ！`);if(p.hp<=0){S.board[k]=null;log(`${p.type}を撃破！`)}render();flashHit(k);return true}
+// 残りターンは対象クリーチャーのコントローラーのターン終了時に減る。
+function tickBerserk(side){for(const p of S.board){if(p&&p.side===side&&p.berserk>0){p.berserk--;if(!p.berserk)log(`${p.type}のバーサークが終了。`)}}}
+function reset(){S.board.forEach(p=>{if(p&&p.side===S.side){p.m=false;p.a=false}})}
+function rel(p,from){if(p.m)return[];let r=Math.floor(from/5),c=from%5,o=[];pattern(p,"move").forEach(([dr,dc])=>{let nr=r+(p.side==="p"?dr:-dr),nc=c+dc;if(IB(nr,nc)&&!S.board[I(nr,nc)]&&movePathClear(from,dr,dc,p))o.push(I(nr,nc))});return o}
+function atk(p,from){if(p.a)return[];let r=Math.floor(from/5),c=from%5,o=[];pattern(p,"attack").forEach(([dr,dc])=>{let nr=r+(p.side==="p"?dr:-dr),nc=c+dc;if(IB(nr,nc)&&S.board[I(nr,nc)]?.side!==p.side)o.push(I(nr,nc))});return o}
+function attackSquares(p,from){if(p.a)return[];let r=Math.floor(from/5),c=from%5,o=[];pattern(p,"attack").forEach(([dr,dc])=>{let nr=r+(p.side==="p"?dr:-dr),nc=c+dc;if(IB(nr,nc)&&S.board[I(nr,nc)]?.side!==p.side)o.push(I(nr,nc))});return o}
+function kingAtk(p,from){if(p.a)return false;let r=Math.floor(from/5),c=from%5,kr=p.side==="p"?-1:5;return pattern(p,"attack").some(([dr,dc])=>{let nr=r+(p.side==="p"?dr:-dr),nc=c+dc;return nr===kr&&nc>=1&&nc<=3})}
+
+const CARD_TEXT={
+ "金":"将棋の金と同じ方向へ1マス移動・攻撃。", "銀":"前3方向と後ろ斜め2方向へ1マス移動・攻撃。", "歩":"前方1マスへ移動・攻撃。", "チャリオット":"移動：前方1〜2マス（途中の駒は飛び越えない）。攻撃：前・右前・左前の1マス。", "アーチャー":"移動：前方1マス。攻撃：前方2マス目のみ（間の駒を越えて攻撃可能）。",
+ "ファイアーボルト":"クリーチャーまたは王を選び、2ダメージ。敵味方どちらも対象にできる。",
+ "ホープ":"自分または相手の王を選ぶ。対象のプレイヤーはカードを2枚引く。",
+ "マナ":"自分の最大マナと未使用マナを1増やす（最大10）。",
+ "バーサーク":"敵味方のクリーチャー1体。3ターン攻撃力2倍、移動・攻撃は前方1マスのみ。重ねがけは期間を更新。",
+ "マイン":"空きマスに設置。4ターン以内に駒が入ると5ダメージを与えて消滅。敵味方どちらにも発動。",
+ "決戦":"2ターンの間、敵味方すべてのクリーチャーの攻撃力+2。後から召喚された駒も対象。重ねがけ可能。"
+};
+function infoHTML(){
+ const esc=x=>String(x).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+ const line=x=>`<div class="infoLine">${esc(x)}</div>`;
+ if(S.card!==null){const t=S.hand[S.card],d=T[t]||SPELL[t]||ENCHANT[t];if(t&&d)return `<div class="infoName">${esc(t)}</div>`+line(`${T[t]?'クリーチャー':SPELL[t]?'スペル':'エンチャント'} / コスト ${d.cost}`)+(T[t]?line(`ATK ${d.atk} / HP ${d.hp}`):'')+`<div class="infoEffect">${esc(CARD_TEXT[t]||'説明なし')}</div>`+(d.cost>S.mana?line(`必要マナ ${d.cost} / 現在 ${S.mana}：マナ不足のため使用不可`):t==='マナ'?`<button type="button" class="useCardButton" onclick="useSelectedMana()">使用する</button>`+line('ボタンを押すと発動。カード再タップで選択解除。'):line('対象をタップして使用。カード再タップで選択解除。'))}
+ if(S.piece!==null&&S.board[S.piece])return creatureInfo(S.board[S.piece],S.piece,esc,line);
+ if(S.inspect?.kind==='piece'&&S.board[S.inspect.k])return creatureInfo(S.board[S.inspect.k],S.inspect.k,esc,line);
+ if(S.inspect?.kind==='king'){const side=S.inspect.side;return `<div class="infoName">${side==='p'?'あなたの王':'相手の王'}</div>`+line(`HP ${side==='p'?S.pHp:S.cHp} / 20`)+line(`マナ ${S.manaBySide[side]} / ${S.maxManaBySide[side]}`)+line('王の攻撃対象は盤外の中央3列。')}
+ if(S.inspect?.kind==='cell'){const k=S.inspect.k,m=S.mines[k]?.side==='p'?S.mines[k]:null;return `<div class="infoName">${Math.floor(k/5)+1}行 ${k%5+1}列</div>`+(m?line(`マイン / 残り${m.turns}ターン`)+`<div class="infoEffect">${esc(CARD_TEXT.マイン)}</div>`:line('空きマス。確認できるエンチャントはありません。'))}
+ return 'カード・駒・空きマス・王をタップすると、ここに情報を表示します。';
+}
+function creatureInfo(p,k,esc,line){let t=T[p.type];return `<div class="infoName">${esc(p.type)}</div>`+line(`${p.side==='p'?'自軍':'相手'} / コスト ${t.cost}`)+line(`HP ${p.hp} / ${t.hp}`)+line(`ATK ${power(p)}（基本 ${p.atk}）`)+line(`🔵 移動 ${p.m?'済':'可能'} / 🔴 攻撃 ${p.a?'済':'可能'}`)+`<div class="infoEffect">${esc(CARD_TEXT[p.type])}</div>`+(p.berserk>0?`<div class="infoEffect">バーサーク：残り${p.berserk}ターン<br>${esc(CARD_TEXT.バーサーク)}</div>`:'')+(S.battles.length?`<div class="infoEffect">決戦：${S.battles.map(b=>b.turns+'T').join('・')} / ATK +${S.battles.length*2}</div>`:'')+(S.mines[k]&&S.mines[k].side==='p'?`<div class="infoEffect">このマス：マイン 残り${S.mines[k].turns}ターン</div>`:'');}
+function renderInfo(){const el=$('infoContent');if(el)el.innerHTML=infoHTML()}
+
+function render(){ $("pHp").textContent=S.pHp;$("cHp").textContent=S.cHp;$("mana").textContent=S.manaBySide.p+"/"+S.maxManaBySide.p;$("cpuMana").textContent=S.manaBySide.c+"/"+S.maxManaBySide.c;$("turn").textContent=S.turn;$("deck").textContent=S.deck.length;$("cpuHand").textContent=S.cHand.length;$("battleTurns").textContent=S.battles.length?S.battles.map(x=>x.turns).join("・")+"ターン":"なし";document.querySelector(".kingZone.enemy").classList.toggle("attackable",S.side==="p"&&S.piece!==null&&!!S.board[S.piece]&&kingAtk(S.board[S.piece],S.piece));
+document.querySelectorAll(".kingZone").forEach(z=>z.classList.toggle("spellTarget",S.side==="p"&&S.card!==null&&["ファイアーボルト","ホープ"].includes(S.hand[S.card])));
+let b=$("board");b.innerHTML="";for(let r=0;r<5;r++)for(let c=0;c<5;c++){let k=I(r,c),e=document.createElement("div");e.className="cell";if(S.piece===k)e.classList.add("selected");if(S.side==="p"&&S.card!==null&&T[S.hand[S.card]]&&T[S.hand[S.card]].cost<=S.mana&&r===4&&!S.board[k])e.classList.add("summonTarget");if(S.mines[k]?.side==="p")e.classList.add("mineCell","ownMine");if(S.side==="p"&&S.card!==null&&(["ファイアーボルト","バーサーク"].includes(S.hand[S.card])&&S.board[k]||S.hand[S.card]==="マイン"&&!S.board[k]&&!S.mines[k]))e.classList.add("spellTarget");if(S.cpuPreview?.from===k)e.classList.add("cpuSelected");let p=S.board[k];if(S.piece!==null||S.cpuPreview){let origin=S.cpuPreview?.from??S.piece;let q=S.board[origin];if(q){let canMove=S.cpuPreview?.kind==="attack"?false:rel(q,origin).includes(k),canAttack=S.cpuPreview?.kind==="move"?false:attackSquares(q,origin).includes(k);if(canMove&&canAttack)e.classList.add("bothTarget");else if(canMove)e.classList.add("moveTarget");else if(canAttack)e.classList.add("attackTarget")}}if(p){let z=document.createElement("div");z.className="piece "+(p.side==="p"?"player":"cpu")+(p.berserk>0?" berserk":"");z.innerHTML=`${!p.a?'<span class="actionDot attack" aria-label="攻撃可能"></span>':''}${!p.m?'<span class="actionDot move" aria-label="移動可能"></span>':''}<div class="pname">${p.type}</div><div class="pstats">ATK ${power(p)} / HP ${p.hp}</div>${p.berserk>0?`<span class="buffTag">狂化 ${p.berserk}</span>`:""}`;e.appendChild(z)}e.onclick=()=>clickCell(r,c);b.appendChild(e)}
+let h=$("hand");h.innerHTML="";S.hand.forEach((t,i)=>{let d=T[t]||SPELL[t]||ENCHANT[t],spell=!!SPELL[t],enchant=!!ENCHANT[t],e=document.createElement("div");e.className="card"+(spell?" spell":enchant?" enchant":"")+(S.card===i?" selected":"");e.innerHTML=enchant?`<div class="name">💢 ${t}</div><div class="cost">エンチャント / コスト ${d.cost}</div><div class="desc">${CARD_TEXT[t]}</div>`:spell?`<div class="name">${t==="ファイアーボルト"?"🔥":t==="ホープ"?"✨":"💧"} ${t}</div><div class="cost">スペル / コスト ${d.cost}</div><div class="desc">${t==="ファイアーボルト"?"対象に2ダメージ":t==="ホープ"?"対象のプレイヤーが2枚引く":"自分の最大・未使用マナ+1（上限10）"}</div>`:`<div class="name">${t}</div><div class="cost">コスト ${d.cost}</div><div class="desc">ATK ${d.atk} / HP ${d.hp}</div>`;e.onclick=()=>pickCard(i);h.appendChild(e)});renderInfo()}
+function pickCard(i){if(S.side!=="p"||S.gameOver)return;let t=S.hand[i],d=T[t]||SPELL[t]||ENCHANT[t];if(S.card===i){S.card=null;S.piece=null;msg("選択を解除しました。");render();return}
+if(t==="決戦"&&d.cost<=S.mana){S.card=null;S.piece=null;S.mana-=4;S.hand.splice(i,1);S.battles.push({turns:2});log("あなたは決戦を使用。全クリーチャーの攻撃力+2（2ターン）。");msg("決戦！ 全クリーチャーの攻撃力が+2！");render();return}
+
+S.card=i;S.piece=null;S.inspect=null;if(d.cost>S.mana){msg(`${t}：必要マナ ${d.cost}。現在 ${S.mana}。マナが足りないため使用できません。`);render();return}msg(t==="バーサーク"?"バーサーク：敵味方のクリーチャーをタップ。カード再タップでキャンセル。":t==="マイン"?"マイン：空きマスをタップして設置。4ターン持続・踏むと5ダメージ。":t==="決戦"?"決戦：カードをもう一度タップするとキャンセル。全クリーチャーの攻撃力+2（2ターン）。":t==="ファイアーボルト"?"ファイアーボルト：クリーチャーか王をタップ。カードを再タップでキャンセル。":t==="ホープ"?"ホープ：自分か相手の王をタップして、引くプレイヤーを選択。":t==="マナ"?"マナ：右の情報パネルの「使用する」を押すと発動。":"自分の王の前の5マスから召喚場所を選択");render()}
+function useSelectedMana(){
+ if(S.side!=="p"||S.gameOver||S.card===null||S.hand[S.card]!=="マナ")return;
+ if(S.mana<2){msg("マナが足りません。");return}
+ const i=S.card;
+ S.card=null;S.piece=null;S.inspect=null;
+ spellCastDirectMana(i);
+}
+function spellCastDirectMana(i){
+ if(S.side!=="p"||S.gameOver||S.hand[i]!=="マナ"||S.mana<2)return;
+ S.mana-=2;S.hand.splice(i,1);S.manaBonus.p++;const before=S.maxMana;
+ S.maxMana=maxManaFor("p");S.mana+=S.maxMana-before;
+ log(`あなたはマナを使用。最大マナ ${before}→${S.maxMana}。`);
+ msg(before===10?"マナ：最大マナはすでに10です。":"マナ：最大マナと未使用マナが1増えました。");render();
+}
+function enchantCast(k){
+ if(S.side!=="p"||S.gameOver||S.card===null||!ENCHANT[S.hand[S.card]])return false;
+ if(S.hand[S.card]==="マイン"){if(S.board[k]||S.mines[k]){msg("マイン：設置されていない空きマスを選択してください。");return true}if(S.mana<2){msg("マナが足りません。");return true}S.mana-=2;S.hand.splice(S.card,1);S.card=null;S.piece=null;S.mines[k]={side:"p",turns:4};log(`あなたは${Math.floor(k/5)+1}行${k%5+1}列にマインを設置。`);msg("マインを設置しました。4ターン持続します。");render();return true}
+ const q=S.board[k];if(!q){msg("バーサーク：クリーチャーを選んでください。");return true}
+ if(S.mana<2){msg("マナが足りません。");return true}
+ S.mana-=2;S.hand.splice(S.card,1);S.card=null;S.piece=null;
+ // 重ねがけは攻撃力4倍にはせず、残り期間を3ターンに更新。
+ q.berserk=3;log(`あなたは${q.side==="p"?"自軍":"敵軍"}の${q.type}にバーサークを使用。`);
+ msg(`${q.type}がバーサーク状態に！ 攻撃力${power(q)}、前方1マスのみ。`);render();return true;
+}
+function spellCast(target){
+ if(S.side!=="p"||S.gameOver||S.card===null)return false;
+ const t=S.hand[S.card],d=SPELL[t];if(!d)return false;
+ if(S.mana<d.cost){msg("マナが足りません。");return true}
+ if(t==="ホープ"&&target.kind!=="king"){msg("ホープ：自分か相手の王を選んでください。");return true}
+ if(t==="ファイアーボルト"&&target.kind==="piece"&&!S.board[target.k]){msg("クリーチャーを選択してください。");return true}
+ S.mana-=d.cost;S.hand.splice(S.card,1);S.card=null;S.piece=null;
+ if(t==="ホープ"){
+   const side=target.side,who=side==="p"?"あなた":"CPU";
+   log(`あなたはホープを使用。${who}が2枚引く。`);
+   for(let j=0;j<2;j++){if(!draw(side)){render();return true}}
+   msg(`ホープ：${who}が2枚引きました。`);render();return true;
+ }
+ if(target.kind==="piece"){
+   const q=S.board[target.k];q.hp-=d.damage;log(`あなたは${t}で${q.type}に${d.damage}ダメージ。`);
+   if(q.hp<=0){S.board[target.k]=null;log(`${q.type}を撃破！`)}
+   msg(`${t}：${q.type}に${d.damage}ダメージ！`);render();flashHit(target.k);
+ }else{
+   const key=target.side==="c"?"cHp":"pHp";S[key]-=d.damage;
+   log(`あなたは${t}で${target.side==="c"?"相手":"自分"}の王に${d.damage}ダメージ。`);
+   msg(`${t}：王に${d.damage}ダメージ！`);render();flashKing(target.side);
+   if(S.cHp<=0)win();else if(S.pHp<=0)lose("自分の王のHPが0になりました");
+ }
+ return true;
+}
+function summon(i,r,c){let t=S.hand[i],d=T[t];if(r!==4||S.board[I(r,c)]||d.cost>S.mana){msg("そこには召喚できません。");return}S.mana-=d.cost;S.board[I(r,c)]={type:t,atk:d.atk,hp:d.hp,side:"p",m:false,a:false};S.hand.splice(i,1);S.card=null;log(`あなたは${t}を召喚。`);msg(`${t}を召喚しました。`);render();enterSquare(I(r,c),S.board[I(r,c)])}
+function flashHit(k){const cell=$("board").children[k];if(!cell)return;cell.classList.remove("hitFlash");void cell.offsetWidth;cell.classList.add("hitFlash");setTimeout(()=>cell.classList.remove("hitFlash"),460)}
+function flashKing(side){const king=document.querySelector(side==="p"?".kingZone.player .king":".kingZone.enemy .king");king.animate([{transform:"scale(1)",filter:"brightness(1)"},{transform:"scale(1.12)",filter:"brightness(2)"},{transform:"scale(1)",filter:"brightness(1)"}],{duration:450})}
+function cancelCardSelection(){
+  S.card=null;S.piece=null;S.inspect=null;
+  msg("対象外をタップしたため、カードの選択を解除しました。");
+  render();
+}
+function cardCanTargetCell(t,k,r){
+  if(!t)return false;
+  const d=T[t]||SPELL[t]||ENCHANT[t];
+  if(!d||d.cost>S.mana)return false;
+  if(T[t])return r===4&&!S.board[k];
+  if(t==="マイン")return !S.board[k]&&!S.mines[k];
+  if(t==="バーサーク"||t==="ファイアーボルト")return !!S.board[k];
+  return false;
+}
+function clickKing(side){
+  if(S.side!=="p"||S.gameOver)return;
+  if(S.card!==null){
+    const t=S.hand[S.card];
+    if((t==="ホープ"||t==="ファイアーボルト")&&SPELL[t].cost<=S.mana){spellCast({kind:"king",side});return}
+    cancelCardSelection();return;
+  }if(S.card!==null&&SPELL[S.hand[S.card]]){spellCast({kind:"king",side});return}if(S.card===null&&S.piece===null){S.inspect={kind:"king",side};renderInfo();return}if(side!=="c"||S.piece===null)return;
+  const p=S.board[S.piece];
+  if(!p)return;
+  if(kingAtk(p,S.piece)){
+    S.cHp-=power(p);
+    p.a=true;
+    log(`${p.type}が相手王を攻撃（-${power(p)}）。`);
+    msg(`相手王に${power(p)}ダメージ！`);
+    S.piece=null;
+    if(S.cHp<=0){win();return}
+    render();flashKing("c");
+  }else{
+    msg("このクリーチャーは今、相手王を攻撃できません。");
+  }
+}
+function clickCell(r,c){if(S.side!=="p"||S.gameOver)return;let k=I(r,c);if(S.card!==null){const selected=S.hand[S.card];if(!cardCanTargetCell(selected,k,r)){cancelCardSelection();return}if(ENCHANT[selected]){enchantCast(k);return}if(SPELL[selected]){spellCast({kind:"piece",k});return}summon(S.card,r,c);return}let t=S.board[k];if(S.piece===null){if(t?.side==="p"){S.piece=k;S.inspect=null;msg(`${t.type}を選択中。移動先・攻撃対象・王を選べます。`);render()}else{S.inspect=t?{kind:"piece",k}:{kind:"cell",k};renderInfo()}return}let f=S.piece,p=S.board[f];if(!p){S.piece=null;render();return}if(t?.side==="p"){S.piece=k;S.inspect=null;render();return}if(rel(p,f).includes(k)){S.board[k]=p;S.board[f]=null;p.m=true;S.piece=k;log(`${p.type}が移動。`);render();enterSquare(k,p);if(!S.board[k])S.piece=null;return}if(atk(p,f).includes(k)){t.hp-=power(p);p.a=true;log(`${p.type}が${t.type}を攻撃（-${power(p)}）。`);if(t.hp<=0){S.board[k]=null;log(`${t.type}を撃破！`);msg(`${t.type}を撃破！`)}else msg(`${t.type}のHPは${t.hp}。`);render();flashHit(k);return}if(kingAtk(p,f)&&r===(p.side==="p"?0:4)&&c>=1&&c<=3){S.cHp-=power(p);p.a=true;log(`${p.type}が相手王を攻撃（-${power(p)}）。`);if(S.cHp<=0)return win();msg(`相手王に${power(p)}ダメージ！`);render();return}S.piece=null;S.inspect=t?{kind:"piece",k}:{kind:"cell",k};render();msg("移動・攻撃範囲外をタップしたため、駒の選択を解除しました。")}
+function endTurn(){if(S.side!=="p"||S.gameOver)return;tickBerserk("p");S.card=null;S.piece=null;S.side="c";S.maxMana=maxManaFor("c");S.mana=S.maxMana;reset();if(!draw("c"))return;render();log("CPUのターン。");msg("CPUが考えています…");setTimeout(cpu,700)}
+const cpuWait=()=>new Promise(resolve=>setTimeout(resolve,700));
+async function cpu(){
+  if(S.gameOver||S.side!=="c")return;
+  // 召喚を1回ずつ表示。各アクションの後に0.7秒待つ。
+  while(!S.gameOver){
+    const options=S.cHand.map((t,i)=>({t,i})).filter(x=>T[x.t]&&T[x.t].cost<=S.mana);
+    const free=[0,1,2,3,4].filter(c=>!S.board[I(0,c)]);
+    if(!options.length||!free.length)break;
+    const x=options[Math.floor(Math.random()*options.length)];
+    const c=free[Math.floor(Math.random()*free.length)],d=T[x.t];
+    S.mana-=d.cost;S.board[I(0,c)]={type:x.t,atk:d.atk,hp:d.hp,side:"c",m:false,a:false};
+    S.cHand.splice(x.i,1);log(`CPUが${x.t}を召喚。`);msg(`CPU：${x.t}を召喚`);render();enterSquare(I(0,c),S.board[I(0,c)]);await cpuWait();
+  }
+  if(S.gameOver)return;
+  // CPUの設置型・全体型エンチャント。
+  while(!S.gameOver){
+    const bi=S.cHand.indexOf("決戦"),mi=S.cHand.indexOf("マイン");
+    if(bi>=0&&S.mana>=4){msg("CPU：決戦を使用");render();await cpuWait();S.mana-=4;S.cHand.splice(bi,1);S.battles.push({turns:2});log("CPUが決戦を使用。全クリーチャー攻撃力+2。");render();await cpuWait();continue}
+    const empty=Array.from({length:25},(_,i)=>i).filter(i=>!S.board[i]&&!S.mines[i]);
+    if(mi>=0&&S.mana>=2&&empty.length){const k=empty[Math.floor(Math.random()*empty.length)];msg("CPU：マインを設置");render();await cpuWait();S.mana-=2;S.cHand.splice(mi,1);S.mines[k]={side:"c",turns:4};log(`CPUが${Math.floor(k/5)+1}行${k%5+1}列にマインを設置。`);render();await cpuWait();continue}
+    break;
+  }
+  // CPUもバーサークを使用。王を攻撃できる駒、次に自軍の駒を優先する。
+  while(!S.gameOver&&S.mana>=2){
+    const ci=S.cHand.indexOf("バーサーク");if(ci<0)break;
+    const own=S.board.map((p,i)=>({p,i})).filter(x=>x.p?.side==="c"&&!(x.p.berserk>0));
+    const target=own.find(x=>kingAtk(x.p,x.i))||own[0];
+    if(!target)break;
+    S.cpuPreview={from:target.i,kind:"enchant"};msg(`CPU：${target.p.type}にバーサークを使用`);render();await cpuWait();
+    S.cpuPreview=null;S.mana-=2;S.cHand.splice(ci,1);target.p.berserk=3;
+    log(`CPUが${target.p.type}にバーサークを使用。`);render();await cpuWait();
+  }
+  // CPUの補助スペル。行動を0.7秒ずつ見せる。
+  while(!S.gameOver){
+    const mi=S.cHand.indexOf("マナ"),hi=S.cHand.indexOf("ホープ");
+    if(mi>=0&&S.mana>=2&&S.maxMana<10){
+      msg("CPU：マナを使用");render();await cpuWait();
+      S.mana-=2;S.cHand.splice(mi,1);S.manaBonus.c++;
+      const old=S.maxMana;S.maxMana=maxManaFor("c");S.mana+=S.maxMana-old;
+      log(`CPUがマナを使用。最大マナ ${old}→${S.maxMana}。`);render();await cpuWait();continue;
+    }
+    if(hi>=0&&S.mana>=1){
+      msg("CPU：ホープを使用（CPUが2枚引く）");render();await cpuWait();
+      S.mana--;S.cHand.splice(hi,1);log("CPUがホープを使用。CPUが2枚引く。");
+      for(let j=0;j<2;j++){if(!draw("c"))return}
+      render();await cpuWait();continue;
+    }
+    break;
+  }
+  if(S.gameOver)return;
+  // CPUは使えるファイアーボルトを1枚ずつ使用。王を優先して狙う。
+  while(!S.gameOver&&S.mana>=SPELL.ファイアーボルト.cost){
+    const idx=S.cHand.indexOf("ファイアーボルト");if(idx<0)break;
+    const enemy=S.board.map((p,i)=>({p,i})).filter(x=>x.p?.side==="p");
+    const target=enemy.length&&S.pHp>2?enemy[Math.floor(Math.random()*enemy.length)]:null;
+    msg(`CPU：ファイアーボルトの対象を選択`);render();await cpuWait();
+    S.mana-=2;S.cHand.splice(idx,1);
+    if(target&&S.board[target.i]===target.p){target.p.hp-=2;log(`CPUがファイアーボルトで${target.p.type}に2ダメージ。`);if(target.p.hp<=0){S.board[target.i]=null;log(`${target.p.type}を撃破。`)}msg(`CPU：${target.p.type}に2ダメージ！`);render();flashHit(target.i)}
+    else{S.pHp-=2;log("CPUがファイアーボルトであなたの王に2ダメージ。");msg("CPU：王に2ダメージ！");render();flashKing("p")}
+    await cpuWait();if(S.pHp<=0){lose("あなたの王が倒されました");return}
+  }
+  if(S.gameOver)return;
+  // 移動可能な駒を選び、移動範囲を見せてから移動する。
+  const movers=S.board.map((p,i)=>({p,i})).filter(x=>x.p?.side==="c"&&!x.p.m&&rel(x.p,x.i).length);
+  if(movers.length){
+    const x=movers[Math.floor(Math.random()*movers.length)];
+    S.cpuPreview={from:x.i,kind:"move"};msg(`CPU：${x.p.type}の移動範囲`);render();await cpuWait();
+    const choices=rel(x.p,x.i);
+    S.cpuPreview=null;
+    if(choices.length){const k=choices[Math.floor(Math.random()*choices.length)];S.board[k]=x.p;S.board[x.i]=null;x.p.m=true;log(`CPUの${x.p.type}が移動。`);msg(`CPU：${x.p.type}を移動`);render();enterSquare(k,x.p);await cpuWait()}
+  }
+  if(S.gameOver)return;
+  // 王への攻撃を優先し、次に相手クリーチャーを攻撃する。
+  const ps=S.board.map((p,i)=>({p,i})).filter(x=>x.p?.side==="c"&&!x.p.a);
+  let x=ps.find(x=>kingAtk(x.p,x.i));
+  let target=null;
+  if(!x){for(const candidate of ps){const targets=atk(candidate.p,candidate.i).filter(k=>S.board[k]?.side==="p");if(targets.length){x=candidate;target=targets[0];break}}}
+  if(x){
+    S.cpuPreview={from:x.i,kind:"attack"};msg(`CPU：${x.p.type}の攻撃範囲`);render();await cpuWait();
+    S.cpuPreview=null;
+    if(target===null){S.pHp-=power(x.p);x.p.a=true;log(`CPUの${x.p.type}が王を攻撃（-${power(x.p)}）。`);msg(`CPU：王に${power(x.p)}ダメージ！`);render();flashKing("p")}
+    else {const q=S.board[target];if(q?.side==="p"){q.hp-=power(x.p);x.p.a=true;log(`CPUの${x.p.type}が${q.type}を攻撃（-${power(x.p)}）。`);if(q.hp<=0){S.board[target]=null;log(`${q.type}を撃破。`)}msg(`CPU：${q.type}に${x.p.atk}ダメージ！`);render();flashHit(target)}}
+    await cpuWait();
+  }
+  if(S.pHp<=0)return lose("あなたの王が倒されました");
+  if(S.gameOver)return;
+  tickBerserk("c");tickBoardEffects();S.cpuPreview=null;S.side="p";S.turn++;S.maxMana=maxManaFor("p");S.mana=S.maxMana;reset();
+  if(!draw("p"))return;
+  log("あなたのターン。");msg("あなたのターンです。");render();
+}
+function win(reason="相手の王HPが0になりました。"){S.gameOver=true;render();$("resultTitle").textContent="勝利！";$("resultText").textContent=reason;$("overlay").classList.add("show")}
+function lose(x){S.gameOver=true;render();$("resultTitle").textContent="敗北";$("resultText").textContent=x;$("overlay").classList.add("show")}
+$("endTurn").onclick=endTurn;$("newGame").onclick=()=>location.reload();S.deck=deck();S.cDeck=deck();for(let i=0;i<5;i++){draw("p");draw("c")}log("ゲーム開始。初期手札5枚。");render();
+</script></body></html>
