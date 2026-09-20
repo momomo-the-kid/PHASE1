@@ -1,0 +1,88 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>5x5 Card Battle Phase 1 — update 5 fixes</title><style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}body{margin:0;background:#15171b;color:#f4f4f4;font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif}#app{max-width:720px;margin:auto;padding:10px}h1{font-size:20px;margin:4px 0 8px}.status{display:flex;gap:6px;flex-wrap:wrap;background:#22262d;border-radius:12px;padding:8px;margin-bottom:8px;font-size:13px}.badge{background:#303640;padding:5px 8px;border-radius:8px}#message{min-height:34px;background:#1d2127;border-radius:10px;padding:8px;margin-bottom:64px;font-size:13px}.boardWrap{position:relative;margin:auto;width:min(92vw,560px);aspect-ratio:1}.board{display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(5,1fr);width:100%;height:100%;border:2px solid #b99b62;background:#c8a66b;gap:1px}.cell{position:relative;background:#d8bd84;border:1px solid #9c7d4b;display:flex;align-items:center;justify-content:center}.cell.cpuSelected{outline:4px solid #ffd36b;outline-offset:-4px}.cell.hitFlash::after{content:"✴️";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:clamp(28px,9vw,54px);z-index:5;pointer-events:none;animation:hitPop .45s ease-out forwards}@keyframes hitPop{0%{opacity:0;transform:scale(.5)}25%{opacity:1;transform:scale(1.25)}100%{opacity:0;transform:scale(1.5)}}.cell.selected{outline:4px solid #55a8ff;outline-offset:-4px}.cell.moveTarget{background:#78b8f5}.cell.attackTarget{background:#f08080}.cell.bothTarget{background:#b391ed}.kingZone.enemy.attackable .king{outline:3px solid #f08080;outline-offset:3px}.piece{width:78%;height:78%;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:800;border:2px solid #333;box-shadow:0 2px 4px #0006}.piece.player{background:#f2d39a;color:#6c351d}.piece.cpu{background:#a9c5e5;color:#173d62}.pname{font-size:clamp(15px,4.5vw,27px)}.pstats{font-size:9px}.kingZone{position:absolute;left:0;width:100%;height:11%;z-index:4;display:flex;align-items:center;justify-content:center;pointer-events:auto}.kingZone.enemy{top:-13%}.kingZone.player{bottom:-13%}.king{pointer-events:auto;cursor:pointer}.king{background:#7f2020;border:2px solid #f2d37c;border-radius:12px;padding:6px 12px;font-weight:800;box-shadow:0 3px 8px #0008}.handTitle{font-size:13px;margin:65px 0 5px}.hand{display:flex;gap:7px;overflow-x:auto;padding:2px 1px 7px}.card{min-width:82px;background:#252a32;border:1px solid #555d69;border-radius:10px;padding:7px;text-align:center}.card.selected{border:3px solid #55a8ff;padding:5px}.card .name{font-weight:800;font-size:16px}.card .cost{font-size:12px}.card .desc{font-size:9px;margin-top:3px}.controls{display:flex;gap:8px;margin-top:3px}button{border:0;border-radius:10px;padding:10px 13px;font-weight:800;background:#4d86c7;color:white}button.secondary{background:#555d69}button:disabled{opacity:.4}#log{margin-top:8px;background:#101216;border-radius:10px;padding:8px;height:120px;overflow:auto;font-size:11px;line-height:1.45}#overlay{position:fixed;inset:0;background:#000b;display:none;align-items:center;justify-content:center;z-index:20}#overlay.show{display:flex}.result{background:#252a32;border:2px solid #aaa;border-radius:16px;padding:24px;text-align:center;width:min(88vw,360px)}
+</style></head><body><div id="app"><h1>5x5 Card Battle — Phase 1</h1><div class="status"><span class="badge">自分 王HP: <b id="pHp">20</b></span><span class="badge">CPU 王HP: <b id="cHp">20</b></span><span class="badge">マナ: <b id="mana">1/1</b></span><span class="badge">ターン: <b id="turn">1</b></span><span class="badge">自分山札: <b id="deck">35</b></span><span class="badge">相手手札: <b id="cpuHand">5</b>枚</span></div><div id="message">カードを選んで召喚してください。</div><div class="boardWrap"><div class="kingZone enemy" onclick="clickKing('c')"><div class="king">CPU 王 HP <span id="kingTop">20</span></div></div><div id="board" class="board"></div><div class="kingZone player"><div class="king">あなたの王 HP <span id="kingBottom">20</span></div></div></div><div class="handTitle">手札（タップして召喚）</div><div id="hand" class="hand"></div><div class="controls"><button id="endTurn">ターン終了</button><button id="newGame" class="secondary">最初から</button></div><div id="log"></div></div><div id="overlay"><div class="result"><h2 id="resultTitle"></h2><p id="resultText"></p><button onclick="location.reload()">もう一度プレイ</button></div></div>
+<script>
+const T={金:{cost:3,atk:5,hp:6,move:[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,0]]},銀:{cost:2,atk:4,hp:6,move:[[-1,-1],[-1,0],[-1,1],[1,-1],[1,0],[1,1]]},歩:{cost:1,atk:3,hp:6,move:[[-1,0]]}};
+const S={turn:1,side:"p",mana:1,maxMana:1,pHp:20,cHp:20,deck:[],hand:[],cDeck:[],cHand:[],board:Array(25).fill(null),card:null,piece:null,gameOver:false,cpuPreview:null};
+const $=x=>document.getElementById(x),I=(r,c)=>r*5+c,IB=(r,c)=>r>=0&&r<5&&c>=0&&c<5;
+function sh(a){for(let i=a.length-1;i;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function deck(){let a=[];for(let i=0;i<40;i++)a.push(["歩","銀","金"][i%3]);return sh(a)}
+function log(x){$("log").innerHTML+="<div>"+x+"</div>";$("log").scrollTop=$("log").scrollHeight}
+function msg(x){$("message").textContent=x}
+function draw(side="p"){let d=side==="p"?S.deck:S.cDeck,h=side==="p"?S.hand:S.cHand;if(!d.length){if(side==="p")lose("山札切れ");else win("CPUの山札切れ");return false}h.push(d.pop());return true}
+function reset(){S.board.forEach(p=>{if(p&&p.side===S.side){p.m=false;p.a=false}})}
+function rel(p,from){if(p.m)return[];let r=Math.floor(from/5),c=from%5,o=[];T[p.type].move.forEach(([dr,dc])=>{let nr=r+(p.side==="p"?dr:-dr),nc=c+dc;if(IB(nr,nc)&&!S.board[I(nr,nc)])o.push(I(nr,nc))});return o}
+function atk(p,from){if(p.a)return[];let r=Math.floor(from/5),c=from%5,o=[];T[p.type].move.forEach(([dr,dc])=>{let nr=r+(p.side==="p"?dr:-dr),nc=c+dc;if(IB(nr,nc)&&S.board[I(nr,nc)]?.side!==p.side)o.push(I(nr,nc))});return o}
+function attackSquares(p,from){if(p.a)return[];let r=Math.floor(from/5),c=from%5,o=[];T[p.type].move.forEach(([dr,dc])=>{let nr=r+(p.side==="p"?dr:-dr),nc=c+dc;if(IB(nr,nc)&&S.board[I(nr,nc)]?.side!==p.side)o.push(I(nr,nc))});return o}
+function kingAtk(p,from){if(p.a)return false;let r=Math.floor(from/5),c=from%5,kr=p.side==="p"?-1:5;return T[p.type].move.some(([dr,dc])=>{let nr=r+(p.side==="p"?dr:-dr),nc=c+dc;return nr===kr&&nc>=1&&nc<=3})}
+function render(){ $("pHp").textContent=S.pHp;$("cHp").textContent=S.cHp;$("kingTop").textContent=S.cHp;$("kingBottom").textContent=S.pHp;$("mana").textContent=S.mana+"/"+S.maxMana;$("turn").textContent=S.turn;$("deck").textContent=S.deck.length;$("cpuHand").textContent=S.cHand.length;document.querySelector(".kingZone.enemy").classList.toggle("attackable",S.piece!==null&&!!S.board[S.piece]&&kingAtk(S.board[S.piece],S.piece));
+let b=$("board");b.innerHTML="";for(let r=0;r<5;r++)for(let c=0;c<5;c++){let k=I(r,c),e=document.createElement("div");e.className="cell";if(S.piece===k)e.classList.add("selected");if(S.cpuPreview?.from===k)e.classList.add("cpuSelected");let p=S.board[k];if(S.piece!==null||S.cpuPreview){let origin=S.cpuPreview?.from??S.piece;let q=S.board[origin];if(q){let canMove=S.cpuPreview?.kind==="attack"?false:rel(q,origin).includes(k),canAttack=S.cpuPreview?.kind==="move"?false:attackSquares(q,origin).includes(k);if(canMove&&canAttack)e.classList.add("bothTarget");else if(canMove)e.classList.add("moveTarget");else if(canAttack)e.classList.add("attackTarget")}}if(p){let z=document.createElement("div");z.className="piece "+(p.side==="p"?"player":"cpu");z.innerHTML=`<div class="pname">${p.type}</div><div class="pstats">ATK ${p.atk} / HP ${p.hp}</div>`;e.appendChild(z)}e.onclick=()=>clickCell(r,c);b.appendChild(e)}
+let h=$("hand");h.innerHTML="";S.hand.forEach((t,i)=>{let d=T[t],e=document.createElement("div");e.className="card"+(S.card===i?" selected":"");e.innerHTML=`<div class="name">${t}</div><div class="cost">コスト ${d.cost}</div><div class="desc">ATK ${d.atk} / HP ${d.hp}</div>`;e.onclick=()=>pickCard(i);h.appendChild(e)})}
+function pickCard(i){if(S.side!=="p"||S.gameOver)return;let t=S.hand[i];if(T[t].cost>S.mana){msg("マナが足りません。");return}S.card=S.card===i?null:i;S.piece=null;msg(S.card!==null?`${t}：自分の王の前の5マスから空いている場所を選択`:"");render()}
+function summon(i,r,c){let t=S.hand[i],d=T[t];if(r!==4||S.board[I(r,c)]||d.cost>S.mana){msg("そこには召喚できません。");return}S.mana-=d.cost;S.board[I(r,c)]={type:t,atk:d.atk,hp:d.hp,side:"p",m:false,a:false};S.hand.splice(i,1);S.card=null;log(`あなたは${t}を召喚。`);msg(`${t}を召喚しました。`);render()}
+function flashHit(k){const cell=$("board").children[k];if(!cell)return;cell.classList.remove("hitFlash");void cell.offsetWidth;cell.classList.add("hitFlash");setTimeout(()=>cell.classList.remove("hitFlash"),460)}
+function flashKing(side){const king=document.querySelector(side==="p"?".kingZone.player .king":".kingZone.enemy .king");king.animate([{transform:"scale(1)",filter:"brightness(1)"},{transform:"scale(1.12)",filter:"brightness(2)"},{transform:"scale(1)",filter:"brightness(1)"}],{duration:450})}
+function clickKing(side){
+  if(S.side!=="p"||S.gameOver||side!=="c"||S.piece===null)return;
+  const p=S.board[S.piece];
+  if(!p)return;
+  if(kingAtk(p,S.piece)){
+    S.cHp-=p.atk;
+    p.a=true;
+    log(`${p.type}が相手王を攻撃（-${p.atk}）。`);
+    msg(`相手王に${p.atk}ダメージ！`);
+    S.piece=null;
+    if(S.cHp<=0){win();return}
+    render();flashKing("c");
+  }else{
+    msg("このクリーチャーは今、相手王を攻撃できません。");
+  }
+}
+function clickCell(r,c){if(S.side!=="p"||S.gameOver)return;let k=I(r,c);if(S.card!==null){summon(S.card,r,c);return}let t=S.board[k];if(S.piece===null){if(t?.side==="p"){S.piece=k;msg(`${t.type}を選択中。移動先・攻撃対象・王を選べます。`);render()}return}let f=S.piece,p=S.board[f];if(!p){S.piece=null;render();return}if(t?.side==="p"){S.piece=k;render();return}if(rel(p,f).includes(k)){S.board[k]=p;S.board[f]=null;p.m=true;S.piece=k;log(`${p.type}が移動。`);render();return}if(atk(p,f).includes(k)){t.hp-=p.atk;p.a=true;log(`${p.type}が${t.type}を攻撃（-${p.atk}）。`);if(t.hp<=0){S.board[k]=null;log(`${t.type}を撃破！`);msg(`${t.type}を撃破！`)}else msg(`${t.type}のHPは${t.hp}。`);render();flashHit(k);return}if(kingAtk(p,f)&&r===(p.side==="p"?0:4)&&c>=1&&c<=3){S.cHp-=p.atk;p.a=true;log(`${p.type}が相手王を攻撃（-${p.atk}）。`);if(S.cHp<=0)return win();msg(`相手王に${p.atk}ダメージ！`);render();return}msg("その行動はできません。")}
+function endTurn(){if(S.side!=="p"||S.gameOver)return;S.card=null;S.piece=null;S.side="c";S.maxMana=Math.min(10,S.turn+1);S.mana=S.maxMana;reset();if(!draw("c"))return;render();log("CPUのターン。");msg("CPUが考えています…");setTimeout(cpu,450)}
+const cpuWait=()=>new Promise(resolve=>setTimeout(resolve,500));
+async function cpu(){
+  if(S.gameOver||S.side!=="c")return;
+  // 召喚を1回ずつ表示。各アクションの後に0.5秒待つ。
+  while(!S.gameOver){
+    const options=S.cHand.map((t,i)=>({t,i})).filter(x=>T[x.t].cost<=S.mana);
+    const free=[0,1,2,3,4].filter(c=>!S.board[I(0,c)]);
+    if(!options.length||!free.length)break;
+    const x=options[Math.floor(Math.random()*options.length)];
+    const c=free[Math.floor(Math.random()*free.length)],d=T[x.t];
+    S.mana-=d.cost;S.board[I(0,c)]={type:x.t,atk:d.atk,hp:d.hp,side:"c",m:false,a:false};
+    S.cHand.splice(x.i,1);log(`CPUが${x.t}を召喚。`);msg(`CPU：${x.t}を召喚`);render();await cpuWait();
+  }
+  if(S.gameOver)return;
+  // 移動可能な駒を選び、移動範囲を見せてから移動する。
+  const movers=S.board.map((p,i)=>({p,i})).filter(x=>x.p?.side==="c"&&!x.p.m&&rel(x.p,x.i).length);
+  if(movers.length){
+    const x=movers[Math.floor(Math.random()*movers.length)];
+    S.cpuPreview={from:x.i,kind:"move"};msg(`CPU：${x.p.type}の移動範囲`);render();await cpuWait();
+    const choices=rel(x.p,x.i);
+    S.cpuPreview=null;
+    if(choices.length){const k=choices[Math.floor(Math.random()*choices.length)];S.board[k]=x.p;S.board[x.i]=null;x.p.m=true;log(`CPUの${x.p.type}が移動。`);msg(`CPU：${x.p.type}を移動`);render();await cpuWait()}
+  }
+  if(S.gameOver)return;
+  // 王への攻撃を優先し、次に相手クリーチャーを攻撃する。
+  const ps=S.board.map((p,i)=>({p,i})).filter(x=>x.p?.side==="c"&&!x.p.a);
+  let x=ps.find(x=>kingAtk(x.p,x.i));
+  let target=null;
+  if(!x){for(const candidate of ps){const targets=atk(candidate.p,candidate.i).filter(k=>S.board[k]?.side==="p");if(targets.length){x=candidate;target=targets[0];break}}}
+  if(x){
+    S.cpuPreview={from:x.i,kind:"attack"};msg(`CPU：${x.p.type}の攻撃範囲`);render();await cpuWait();
+    S.cpuPreview=null;
+    if(target===null){S.pHp-=x.p.atk;x.p.a=true;log(`CPUの${x.p.type}が王を攻撃（-${x.p.atk}）。`);msg(`CPU：王に${x.p.atk}ダメージ！`);render();flashKing("p")}
+    else {const q=S.board[target];if(q?.side==="p"){q.hp-=x.p.atk;x.p.a=true;log(`CPUの${x.p.type}が${q.type}を攻撃（-${x.p.atk}）。`);if(q.hp<=0){S.board[target]=null;log(`${q.type}を撃破。`)}msg(`CPU：${q.type}に${x.p.atk}ダメージ！`);render();flashHit(target)}}
+    await cpuWait();
+  }
+  if(S.pHp<=0)return lose("あなたの王が倒されました");
+  if(S.gameOver)return;
+  S.cpuPreview=null;S.side="p";S.turn++;S.maxMana=Math.min(10,S.turn);S.mana=S.maxMana;reset();
+  if(!draw("p"))return;
+  log("あなたのターン。");msg("あなたのターンです。");render();
+}
+function win(reason="相手の王HPが0になりました。"){S.gameOver=true;render();$("resultTitle").textContent="勝利！";$("resultText").textContent=reason;$("overlay").classList.add("show")}
+function lose(x){S.gameOver=true;render();$("resultTitle").textContent="敗北";$("resultText").textContent=x;$("overlay").classList.add("show")}
+$("endTurn").onclick=endTurn;$("newGame").onclick=()=>location.reload();S.deck=deck();S.cDeck=deck();for(let i=0;i<5;i++){draw("p");draw("c")}log("ゲーム開始。初期手札5枚。");render();
+</script></body></html>
